@@ -4,15 +4,13 @@
  */
 
 import {trackWithRedirects} from './tracking-url-handler.mjs';
+import {util} from '@dailymotion/vast-client';
 
 /**
  * Применяет патч к @dailymotion/vast-client
  * Переопределяет util.track для использования нашего улучшенного трекинга
  */
 export function patchVASTClient() {
-  // Импортируем util из @dailymotion/vast-client
-  const {util} = require('@dailymotion/vast-client');
-  
   if (util && util.track) {
     // Сохраняем оригинальную функцию
     const originalTrack = util.track;
@@ -37,8 +35,6 @@ export function patchVASTClient() {
  * Восстанавливает оригинальную функцию track
  */
 export function unpatchVASTClient() {
-  const {util} = require('@dailymotion/vast-client');
-  
   if (util && util._originalTrack) {
     util.track = util._originalTrack;
     delete util._originalTrack;
