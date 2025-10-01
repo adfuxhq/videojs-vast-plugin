@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VAST Redirect Tracking Test</title>
+    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .video-js { width: 640px; height: 360px; }
+        .info { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .log { background: #000; color: #0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>VAST Redirect Tracking Test</h1>
+    
+    <div class="info">
+        <h3>Тест редиректов в трекинге</h3>
+        <p>Этот тест проверяет, что трекинг корректно следует 302/307 редиректам.</p>
+        <p>Откройте DevTools → Network и посмотрите, что запросы следуют редиректам.</p>
+    </div>
+
+    <video-js id="player" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360">
+        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+    </video-js>
+
+    <div class="log" id="log"></div>
+
+    <script>
+        // Логирование в консоль и на страницу
+        function log(message) {
+            console.log(message);
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Создаем тестовый VAST с редиректами
+        const testVAST = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="3.0">
+  <Ad id="test-ad">
+    <InLine>
+      <AdSystem>Test System</AdSystem>
+      <AdTitle>Test Ad with Redirects</AdTitle>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:10</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+              </MediaFile>
+            </MediaFiles>
+            <TrackingEvents>
+              <Tracking event="impression">
+                https://httpbin.org/redirect-to?url=https://httpbin.org/status/200&status_code=302
+              </Tracking>
+              <Tracking event="start">
+                https://httpbin.org/redirect-to?url=https://httpbin.org/status/200&status_code=307
+              </Tracking>
+              <Tracking event="firstQuartile">
+                https://httpbin.org/redirect-to?url=https://httpbin.org/status/200&status_code=302
+              </Tracking>
+              <Tracking event="midpoint">
+                https://httpbin.org/redirect-to?url=https://httpbin.org/status/200&status_code=307
+              </Tracking>
+              <Tracking event="thirdQuartile">
+                https://httpbin.org/redirect-to?url=https://httpbin.org/status/200&status_code=302
+              </Tracking>
+              <Tracking event="complete">
+                https://httpbin.org/redirect-to?url=https://httpbin.org/status/200&status_code=307
+              </Tracking>
+            </TrackingEvents>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+
+        // Инициализируем плеер
+        const player = videojs('player', {
+            plugins: {
+                vast: {
+                    url: 'data:text/xml;base64,' + btoa(testVAST),
+                    adTagUrl: 'data:text/xml;base64,' + btoa(testVAST),
+                    adText: 'Advertisement',
+                    skip: 0,
+                    prerollTimeout: 5000,
+                    postrollTimeout: 5000,
+                    allowVPAID: false
+                }
+            }
+        });
+
+        // Слушаем события
+        player.ready(() => {
+            log('Player ready');
+        });
+
+        player.on('vast.adStart', () => {
+            log('VAST Ad started - tracking events should fire with redirects');
+        });
+
+        player.on('vast.adEnd', () => {
+            log('VAST Ad ended');
+        });
+
+        player.on('vast.adError', (event) => {
+            log('VAST Ad error: ' + event.detail);
+        });
+
+        // Загружаем плагин
+        player.vast();
+    </script>
+
+    <!-- Загружаем наш плагин -->
+    <script src="../dist/videojsx.vast.js"></script>
+</body>
+</html>

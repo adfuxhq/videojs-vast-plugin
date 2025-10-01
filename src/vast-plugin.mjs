@@ -7,6 +7,7 @@ import {AdSelector} from './ad-selector.mjs';
 import {VPAIDHandler} from './vpaid-handler.mjs';
 import {createVASTContext} from "./event.mjs";
 import {once, cloneJson, convertOffsetToSeconds} from "./utils.mjs";
+import {patchVASTClient} from './vast-client-patch.mjs';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -64,6 +65,9 @@ export class VastPlugin extends Plugin {
 
     /** @type {VASTClient} */
     const vastClient = new VASTClient();
+    
+    // Применяем патч для поддержки редиректов в трекинге
+    patchVASTClient();
     /** @type {TrackedAd[]} */
     const ads = [];
     /** @type {TrackedAd|null} */
