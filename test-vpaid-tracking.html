@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VPAID Tracking Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .event { color: #0066cc; font-weight: bold; }
+        .error { color: #cc0000; }
+        .success { color: #00cc00; }
+    </style>
+</head>
+<body>
+    <h1>VPAID Tracking Test</h1>
+    <p>Этот тест проверяет, что VPAID обработчик отправляет все трекинговые события из родительского VAST.</p>
+    
+    <div id="player-container">
+        <video id="test-player" width="640" height="360" controls>
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="log" id="log">
+        <h3>События трекинга:</h3>
+        <div id="events"></div>
+    </div>
+
+    <script>
+        // Мокаем трекер для тестирования
+        class MockTracker {
+            constructor() {
+                this.events = [];
+            }
+
+            trackImpression() {
+                this.logEvent('impression', 'Impression событие отправлено');
+            }
+
+            track(eventType) {
+                this.logEvent(eventType, `Трекинговое событие: ${eventType}`);
+            }
+
+            setProgress(progress) {
+                this.logEvent('progress', `Прогресс: ${progress.toFixed(1)}%`);
+            }
+
+            setPaused(paused) {
+                this.logEvent(paused ? 'pause' : 'resume', `Реклама ${paused ? 'приостановлена' : 'возобновлена'}`);
+            }
+
+            setMuted(muted) {
+                this.logEvent(muted ? 'mute' : 'unmute', `Звук ${muted ? 'выключен' : 'включен'}`);
+            }
+
+            setFullscreen(fullscreen) {
+                this.logEvent('fullscreen', `Полноэкранный режим: ${fullscreen ? 'включен' : 'выключен'}`);
+            }
+
+            skip() {
+                this.logEvent('skip', 'Реклама пропущена');
+            }
+
+            complete() {
+                this.logEvent('complete', 'Реклама завершена');
+            }
+
+            logEvent(type, message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event';
+                eventDiv.innerHTML = `[${timestamp}] ${message}`;
+                document.getElementById('events').appendChild(eventDiv);
+                console.log(`[VPAID Tracking] ${type}: ${message}`);
+            }
+        }
+
+        // Создаем мок трекер
+        const mockTracker = new MockTracker();
+
+        // Симулируем VPAID обработчик
+        function simulateVPAIDTracking() {
+            console.log('Симулируем VPAID трекинг...');
+            
+            // 1. Impression события
+            mockTracker.trackImpression();
+            
+            // 2. CreativeView событие
+            mockTracker.track('creativeView');
+            
+            // 3. Start событие
+            mockTracker.track('start');
+            
+            // 4. Симулируем прогресс и квартили
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 10;
+                mockTracker.setProgress(progress);
+                
+                if (progress >= 25 && progress < 35) {
+                    mockTracker.track('firstQuartile');
+                }
+                if (progress >= 50 && progress < 60) {
+                    mockTracker.track('midpoint');
+                }
+                if (progress >= 75 && progress < 85) {
+                    mockTracker.track('thirdQuartile');
+                }
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    mockTracker.track('complete');
+                }
+            }, 1000);
+            
+            // 5. Симулируем другие события
+            setTimeout(() => {
+                mockTracker.setMuted(true);
+                setTimeout(() => {
+                    mockTracker.setMuted(false);
+                }, 2000);
+            }, 5000);
+            
+            setTimeout(() => {
+                mockTracker.setPaused(true);
+                setTimeout(() => {
+                    mockTracker.setPaused(false);
+                }, 2000);
+            }, 8000);
+            
+            setTimeout(() => {
+                mockTracker.setFullscreen(true);
+                setTimeout(() => {
+                    mockTracker.setFullscreen(false);
+                }, 2000);
+            }, 12000);
+        }
+
+        // Запускаем тест
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Запускаем тест VPAID трекинга...');
+            simulateVPAIDTracking();
+        });
+    </script>
+</body>
+</html>

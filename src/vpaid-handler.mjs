@@ -16,6 +16,10 @@ export class VPAIDHandler {
   #volume
   #muted
   #controlBar
+  #progressInterval
+  #firstQuartileSent
+  #midpointSent
+  #thirdQuartileSent
 
   constructor(player, options) {
     this.#player = player;
@@ -27,6 +31,9 @@ export class VPAIDHandler {
     this.#cancelled = false;
     this.#started = false
     this.#forceStopDone = false;
+    this.#firstQuartileSent = false;
+    this.#midpointSent = false;
+    this.#thirdQuartileSent = false;
 
     this.setVolume(this.#player.volume());
 
@@ -53,6 +60,9 @@ export class VPAIDHandler {
         }
 
         const onAdComplete = () => {
+          this.#stopProgressTracking();
+          // Отправляем complete событие из родительского VAST
+          tracker.track('complete');
           cleanUp();
           resolve();
           player.trigger('vpaid.AdStopped');
@@ -65,6 +75,7 @@ export class VPAIDHandler {
         adUnit.subscribe('AdStopped', onAdComplete);
 
         const forceStopAd = err => {
+          this.#stopProgressTracking();
           if (adUnit && !this.#forceStopDone) {
             adUnit.unsubscribe('AdStopped', onAdComplete);
             const onAdCancel = () => {
@@ -152,7 +163,20 @@ export class VPAIDHandler {
             return;
           }
 
+          // 1. Сразу отправляем impression события из родительского VAST
+          tracker.trackImpression();
+
+          // 2. Сразу отправляем creativeView событие из родительского VAST
+          tracker.track('creativeView');
+
+          // 3. Сразу отправляем start событие из родительского VAST
+          tracker.track('start');
+
+          // 4. Настраиваем отслеживание прогресса и генерацию квартилей
+          this.#startProgressTracking(adUnit, tracker);
+
           adUnit.subscribe('AdSkipped', () => {
+            this.#stopProgressTracking();
             tracker.skip();
             player.trigger('vpaid.AdSkipped');
             player.trigger({
@@ -168,8 +192,12 @@ export class VPAIDHandler {
 
               if (currentVolume === 0 && lastVolume > 0) {
                 tracker.setMuted(true);
+                // Отправляем mute событие из родительского VAST
+                tracker.track('mute');
               } else if (currentVolume > 0 && lastVolume === 0) {
                 tracker.setMuted(false);
+                // Отправляем unmute событие из родительского VAST
+                tracker.track('unmute');
               }
 
               this.setVolume(currentVolume);
@@ -257,11 +285,15 @@ export class VPAIDHandler {
 
           adUnit.subscribe('AdPaused', () => {
             tracker.setPaused(true);
+            // Отправляем pause событие из родительского VAST
+            tracker.track('pause');
             player.trigger('vpaid.AdPaused');
           });
 
           adUnit.subscribe('AdPlaying', () => {
             tracker.setPaused(false);
+            // Отправляем resume событие из родительского VAST
+            tracker.track('resume');
             player.trigger('vpaid.AdPlaying');
           });
 
@@ -303,6 +335,16 @@ export class VPAIDHandler {
             this.#started = true
             tracker.track('start');
             player.on('playerresize', resizeAd);
+            
+            // Отслеживаем изменения fullscreen для отправки VAST событий
+            player.on('fullscreenchange', () => {
+              const isFullscreen = player.isFullscreen();
+              tracker.setFullscreen(isFullscreen);
+              if (isFullscreen) {
+                tracker.track('fullscreen');
+              }
+            });
+            
             player.trigger('ads-ad-started'); // notify videojs-contrib-ads
             player.trigger({
               type: 'vast.adStart',
@@ -402,6 +444,55 @@ export class VPAIDHandler {
       className = className.replaceAll('mute', '').trim();
       className += this.#muted ? ' mute' : '';
       this.#controlBar.className = className;
+    }
+  }
+
+  #startProgressTracking(adUnit, tracker) {
+    // Очищаем предыдущий интервал если есть
+    this.#stopProgressTracking();
+
+    this.#progressInterval = setInterval(() => {
+      if (this.#cancelled || this.#forceStopDone) {
+        this.#stopProgressTracking();
+        return;
+      }
+      
+      adUnit.getAdRemainingTime((error, remainingTime) => {
+        if (error || remainingTime === undefined) return;
+        
+        const duration = adUnit.getAdDuration();
+        if (duration > 0) {
+          const elapsed = duration - remainingTime;
+          const progress = (elapsed / duration) * 100;
+          
+          // Обновляем прогресс в трекере
+          tracker.setProgress(progress);
+          
+          // Генерируем квартили на основе прогресса
+          if (progress >= 25 && !this.#firstQuartileSent) {
+            tracker.track('firstQuartile');
+            this.#firstQuartileSent = true;
+            console.log('[VPAID] First quartile reached via progress tracking');
+          }
+          if (progress >= 50 && !this.#midpointSent) {
+            tracker.track('midpoint');
+            this.#midpointSent = true;
+            console.log('[VPAID] Midpoint reached via progress tracking');
+          }
+          if (progress >= 75 && !this.#thirdQuartileSent) {
+            tracker.track('thirdQuartile');
+            this.#thirdQuartileSent = true;
+            console.log('[VPAID] Third quartile reached via progress tracking');
+          }
+        }
+      });
+    }, 1000);
+  }
+
+  #stopProgressTracking() {
+    if (this.#progressInterval) {
+      clearInterval(this.#progressInterval);
+      this.#progressInterval = null;
     }
   }
 }

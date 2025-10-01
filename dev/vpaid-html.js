@@ -190,7 +190,7 @@ VpaidHtmlPlayer.prototype.startSkipTimer_ = function() {
       this.nextQuartileIndex_ += 1;
     }
 
-  }, 1000);
+  }, 100);
 };
 
 VpaidHtmlPlayer.prototype.stopAd = function() {
