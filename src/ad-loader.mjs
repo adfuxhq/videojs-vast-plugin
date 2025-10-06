@@ -2,12 +2,14 @@ import window from "global";
 import {companionFn, linearFn} from "./utils.mjs";
 import {VASTClient, VASTParser, VASTTracker} from '@dailymotion/vast-client';
 import {TrackedAd} from "./tracked-ad.mjs";
+import {Logger} from './logger.mjs';
 
 export class AdLoader {
   #vastClient
   #vastParser
   #options
-  #adSelector;
+  #adSelector
+  #lastVastUrl;
 
   /**
    *
@@ -71,9 +73,14 @@ export class AdLoader {
         throw new Error('xml config option must be a String or XMLDocument');
       }
 
+      this.#lastVastUrl = 'inline-xml';
       this.#vastParser
         .parseVAST(xmlDocument)
-        .then(this.#adSelector.selectAds)
+        .then(ads => {
+          // Логируем событие парсинга VAST
+          Logger.logVastParsed('inline-xml');
+          return this.#adSelector.selectAds(ads);
+        })
         .then(this.#createTrackedAds)
         .then(accept)
         .catch(reject);
@@ -82,12 +89,17 @@ export class AdLoader {
 
   loadAdsWithUrl(url) {
     return new Promise((accept, reject) => {
+      this.#lastVastUrl = url;
       this.#vastClient
         .get(url, {
           withCredentials: this.#options.withCredentials,
           wrapperLimit: this.#options.wrapperLimit,
         })
-        .then(this.#adSelector.selectAds)
+        .then(ads => {
+          // Логируем событие парсинга VAST
+          Logger.logVastParsed(url);
+          return this.#adSelector.selectAds(ads);
+        })
         .then(this.#createTrackedAds)
         .then(accept)
         .catch(reject);
@@ -124,7 +136,14 @@ export class AdLoader {
       return new TrackedAd(linearAdTracker, companionAdTracker);
     }
 
-    return ads.map(createTrackedAd);
+    const trackedAds = ads.map(createTrackedAd);
+    
+    // Логируем событие готовности VAST (после создания TrackedAd объектов)
+    // Используем URL из последнего загруженного VAST или 'inline-xml' если не определен
+    const vastUrl = this.#lastVastUrl || 'inline-xml';
+    Logger.logVastReady(vastUrl);
+    
+    return trackedAds;
   }
 }
 

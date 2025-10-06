@@ -8,6 +8,7 @@ import {VPAIDHandler} from './vpaid-handler.mjs';
 import {createVASTContext} from "./event.mjs";
 import {once, cloneJson, convertOffsetToSeconds} from "./utils.mjs";
 import {patchVASTClient} from './vast-client-patch.mjs';
+import {Logger} from './logger.mjs';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -62,6 +63,10 @@ export class VastPlugin extends Plugin {
 
     const mergeOptionsFunction = parseInt(videojs.VERSION, 10) >= 8 ? videojs.obj.merge : videojs.mergeOptions;
     options = mergeOptionsFunction(DEFAULT_OPTIONS, options || {});
+
+    // Логируем событие загрузки VAST плагина
+    const vastUrl = options.url || 'inline-xml';
+    Logger.logVastLoaded(vastUrl);
 
     /** @type {VASTClient} */
     const vastClient = new VASTClient();
