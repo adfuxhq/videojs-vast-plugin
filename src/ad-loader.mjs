@@ -95,6 +95,7 @@ export class AdLoader {
         .get(url, {
           withCredentials: this.#options.withCredentials,
           wrapperLimit: this.#options.wrapperLimit,
+          urlHandler: this.#options.urlHandler,
         })
         .then(ads => {
           // Логируем событие парсинга VAST

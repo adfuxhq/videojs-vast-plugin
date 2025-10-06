@@ -9,6 +9,7 @@ import {createVASTContext} from "./event.mjs";
 import {once, cloneJson, convertOffsetToSeconds} from "./utils.mjs";
 import {patchVASTClient} from './vast-client-patch.mjs';
 import {Logger} from './logger.mjs';
+import {createDefaultVastUrlHandler} from './vast-url-handler.mjs';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -17,6 +18,7 @@ const DEFAULT_OPTIONS = Object.freeze({
   controlsEnabled: false,
   wrapperLimit: 10,
   withCredentials: true,
+  urlHandler: createDefaultVastUrlHandler(),
   skip: 0,
   displayRemainingTime: false,
   displayRemainingTimeIcons: false,
