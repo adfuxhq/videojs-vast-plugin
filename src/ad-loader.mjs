@@ -4,6 +4,7 @@ import {VASTClient, VASTParser, VASTTracker} from '@dailymotion/vast-client';
 import {TrackedAd} from "./tracked-ad.mjs";
 import {Logger} from './logger.mjs';
 import {LoggedVASTTracker} from './logged-vast-tracker.mjs';
+import {patchVASTClient} from './vast-client-patch.mjs';
 
 export class AdLoader {
   #vastClient
@@ -93,6 +94,10 @@ export class AdLoader {
   loadAdsWithUrl(url) {
     return new Promise((accept, reject) => {
       this.#lastVastUrl = url;
+      
+      // Применяем патч VAST клиента перед первым использованием
+      patchVASTClient();
+      
       this.#vastClient
         .get(url, {
           withCredentials: this.#options.withCredentials,

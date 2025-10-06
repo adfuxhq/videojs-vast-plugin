@@ -7,7 +7,6 @@ import {AdSelector} from './ad-selector.mjs';
 import {VPAIDHandler} from './vpaid-handler.mjs';
 import {createVASTContext} from "./event.mjs";
 import {once, cloneJson, convertOffsetToSeconds} from "./utils.mjs";
-import {patchVASTClient} from './vast-client-patch.mjs';
 import {Logger} from './logger.mjs';
 import {createDefaultVastUrlHandler, createXHRVastUrlHandler} from './vast-url-handler.mjs';
 
@@ -68,9 +67,6 @@ export class VastPlugin extends Plugin {
 
     /** @type {VASTClient} */
     const vastClient = new VASTClient();
-    
-    // Применяем патч для поддержки редиректов в трекинге
-    patchVASTClient();
     /** @type {TrackedAd[]} */
     const ads = [];
     /** @type {TrackedAd|null} */
@@ -177,6 +173,13 @@ export class VastPlugin extends Plugin {
 
     player.on('readyforpostroll', () => {
       timedOut = false;
+      
+      // Проверяем, есть ли postroll в schedule и есть ли у него url или xml
+      if (!postRollScheduleItem || (!postRollScheduleItem.url && !postRollScheduleItem.xml)) {
+        player.trigger('nopostroll');
+        return;
+      }
+      
       adLoader.loadAds(postRollScheduleItem)
         .then(trackedAds => {
           if (timedOut) {
