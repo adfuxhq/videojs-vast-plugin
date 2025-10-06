@@ -18,86 +18,53 @@ export class LoggedVASTTracker extends VASTTracker {
   setupEventListeners() {
     // Слушаем события трекинга от VASTTracker
     this.on('creativeView', () => {
-      Logger.logCreativeView({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logCreativeView();
     });
 
     this.on('start', () => {
-      Logger.logStart({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logStart();
     });
 
     this.on('firstQuartile', () => {
-      Logger.logFirstQuartile({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logFirstQuartile();
     });
 
     this.on('midpoint', () => {
-      Logger.logMidpoint({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logMidpoint();
     });
 
     this.on('thirdQuartile', () => {
-      Logger.logThirdQuartile({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logThirdQuartile();
     });
 
     this.on('complete', () => {
-      Logger.logComplete({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logComplete();
     });
 
     this.on('mute', () => {
-      Logger.logMute({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logMute();
     });
 
     this.on('unmute', () => {
-      Logger.logUnmute({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logUnmute();
     });
 
     this.on('pause', () => {
-      Logger.logPause({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logPause();
     });
 
     this.on('resume', () => {
-      Logger.logResume({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logResume();
     });
 
     this.on('fullscreen', () => {
-      Logger.logFullscreen({
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logFullscreen();
     });
   }
 
 
   /**
-   * Переопределяем setProgress для логирования duration при первом определении
+   * Переопределяем setProgress для логирования duration и прогресса
    */
   setProgress(progress) {
     const wasDurationUndefined = isNaN(this.assetDuration);
@@ -105,10 +72,13 @@ export class LoggedVASTTracker extends VASTTracker {
     
     // Логируем duration только при первом определении
     if (wasDurationUndefined && !isNaN(this.assetDuration)) {
-      Logger.logDuration(this.assetDuration, {
-        adId: this.ad?.id,
-        creativeId: this.creative?.id
-      });
+      Logger.logDuration(this.assetDuration);
+    }
+    
+    // Логируем прогресс в процентах
+    if (!isNaN(this.assetDuration) && this.assetDuration > 0) {
+      const progressPercent = Math.round((progress / this.assetDuration) * 100);
+      Logger.logProgress(progressPercent);
     }
   }
 
@@ -118,11 +88,6 @@ export class LoggedVASTTracker extends VASTTracker {
    */
   error(errorData) {
     super.error(errorData);
-    Logger.log('error', {
-      message: `Ad error occurred: ${errorData?.ERRORCODE || 'Unknown error'}`,
-      errorCode: errorData?.ERRORCODE,
-      adId: this.ad?.id,
-      creativeId: this.creative?.id
-    });
+    Logger.log('error', errorData?.ERRORCODE?.toString() || 'Unknown error');
   }
 }

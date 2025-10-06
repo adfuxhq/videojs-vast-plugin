@@ -9,13 +9,13 @@ export class Logger {
   /**
    * Логирует событие в консоль браузера
    * @param {string} event - Название события
-   * @param {Object} additionalData - Дополнительные данные для события
+   * @param {string|null} message - Сообщение с важными данными или null
    */
-  static log(event, additionalData = {}) {
+  static log(event, message = null) {
     const eventData = {
       [EVENT_KEY]: event,
-      eventTime: Date.now(),
-      ...additionalData
+      'event-time': Date.now(),
+      message: message
     };
     
     console.info(JSON.stringify(eventData));
@@ -26,7 +26,7 @@ export class Logger {
    * @param {string} vastUrl - URL, из которого был загружен VAST код
    */
   static logVastLoaded(vastUrl) {
-    this.log('vast-loaded', { message: vastUrl });
+    this.log('vast-loaded', vastUrl);
   }
 
   /**
@@ -34,7 +34,7 @@ export class Logger {
    * @param {string} vastUrl - URL, из которого был загружен VAST код
    */
   static logVastParsed(vastUrl) {
-    this.log('vast-parsed', { message: vastUrl });
+    this.log('vast-parsed', vastUrl);
   }
 
   /**
@@ -42,156 +42,109 @@ export class Logger {
    * @param {string} vastUrl - URL, из которого был загружен VAST код
    */
   static logVastReady(vastUrl) {
-    this.log('vast-ready', { message: vastUrl });
+    this.log('vast-ready', vastUrl);
   }
 
   // === События трекинга ===
 
   /**
    * Логирует событие creativeView
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logCreativeView(additionalData = {}) {
-    this.log('creative-view', { 
-      message: 'Creative view event triggered',
-      ...additionalData 
-    });
+  static logCreativeView() {
+    this.log('creative-view', null);
   }
 
   /**
    * Логирует событие start
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logStart(additionalData = {}) {
-    this.log('start', { 
-      message: 'Ad playback started',
-      ...additionalData 
-    });
+  static logStart() {
+    this.log('start', null);
   }
 
   /**
    * Логирует событие firstQuartile (25%)
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logFirstQuartile(additionalData = {}) {
-    this.log('first-quartile', { 
-      message: 'Ad reached first quartile (25%)',
-      ...additionalData 
-    });
+  static logFirstQuartile() {
+    this.log('first-quartile', null);
   }
 
   /**
    * Логирует событие midpoint (50%)
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logMidpoint(additionalData = {}) {
-    this.log('midpoint', { 
-      message: 'Ad reached midpoint (50%)',
-      ...additionalData 
-    });
+  static logMidpoint() {
+    this.log('midpoint', null);
   }
 
   /**
    * Логирует событие thirdQuartile (75%)
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logThirdQuartile(additionalData = {}) {
-    this.log('third-quartile', { 
-      message: 'Ad reached third quartile (75%)',
-      ...additionalData 
-    });
+  static logThirdQuartile() {
+    this.log('third-quartile', null);
   }
 
   /**
    * Логирует событие complete (100%)
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logComplete(additionalData = {}) {
-    this.log('complete', { 
-      message: 'Ad playback completed',
-      ...additionalData 
-    });
+  static logComplete() {
+    this.log('complete', null);
   }
 
   /**
    * Логирует событие mute
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logMute(additionalData = {}) {
-    this.log('mute', { 
-      message: 'Ad was muted',
-      ...additionalData 
-    });
+  static logMute() {
+    this.log('mute', null);
   }
 
   /**
    * Логирует событие unmute
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logUnmute(additionalData = {}) {
-    this.log('unmute', { 
-      message: 'Ad was unmuted',
-      ...additionalData 
-    });
+  static logUnmute() {
+    this.log('unmute', null);
   }
 
   /**
    * Логирует событие pause
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logPause(additionalData = {}) {
-    this.log('pause', { 
-      message: 'Ad playback paused',
-      ...additionalData 
-    });
+  static logPause() {
+    this.log('pause', null);
   }
 
   /**
    * Логирует событие resume
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logResume(additionalData = {}) {
-    this.log('resume', { 
-      message: 'Ad playback resumed',
-      ...additionalData 
-    });
+  static logResume() {
+    this.log('resume', null);
   }
 
   /**
    * Логирует событие fullscreen
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logFullscreen(additionalData = {}) {
-    this.log('fullscreen', { 
-      message: 'Ad entered fullscreen mode',
-      ...additionalData 
-    });
+  static logFullscreen() {
+    this.log('fullscreen', null);
   }
 
   /**
    * Логирует определение duration рекламы
    * @param {number} duration - Длительность в секундах
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logDuration(duration, additionalData = {}) {
-    this.log('duration', { 
-      message: `Ad duration determined: ${duration} seconds`,
-      duration: duration,
-      ...additionalData 
-    });
+  static logDuration(duration) {
+    this.log('duration', duration.toString());
   }
 
   /**
    * Логирует количество рекламы в блоке
    * @param {number} adsCount - Количество рекламы
-   * @param {Object} additionalData - Дополнительные данные
    */
-  static logAdsCount(adsCount, additionalData = {}) {
-    this.log('ads-count', { 
-      message: `Ads count determined: ${adsCount} ads`,
-      adsCount: adsCount,
-      ...additionalData 
-    });
+  static logAdsCount(adsCount) {
+    this.log('ads-count', adsCount.toString());
+  }
+
+  /**
+   * Логирует прогресс просмотра рекламы
+   * @param {number} progress - Процент прогресса (0-100)
+   */
+  static logProgress(progress) {
+    this.log('progress', progress.toString());
   }
 }
- 

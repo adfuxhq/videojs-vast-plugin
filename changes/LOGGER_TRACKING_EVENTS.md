@@ -24,17 +24,45 @@
   - `logFullscreen()` - событие fullscreen
 - Добавлен метод `logDuration()` для логирования определения длительности рекламы
 - Добавлен метод `logAdsCount()` для логирования количества рекламы в блоке
+- Добавлен метод `logProgress()` для логирования прогресса просмотра рекламы
 
 **Структура событий:**
 ```javascript
 {
   "videojs-vast-plugin-event": "event-name",
-  "eventTime": 1234567890,
-  "message": "Описание события",
-  "adId": "123",
-  "creativeId": "456",
-  "duration": 30, // только для duration события
-  "adsCount": 3 // только для ads-count события
+  "event-time": 1234567890,
+  "message": "важные данные или null"
+}
+```
+
+**Примеры событий:**
+```javascript
+// Событие без важных данных
+{
+  "videojs-vast-plugin-event": "start",
+  "event-time": 1234567890,
+  "message": null
+}
+
+// Событие с важными данными
+{
+  "videojs-vast-plugin-event": "duration",
+  "event-time": 1234567890,
+  "message": "30"
+}
+
+// Событие прогресса
+{
+  "videojs-vast-plugin-event": "progress",
+  "event-time": 1234567890,
+  "message": "25"
+}
+
+// Событие с URL
+{
+  "videojs-vast-plugin-event": "vast-loaded",
+  "event-time": 1234567890,
+  "message": "https://example.com/vast.xml"
 }
 ```
 
@@ -47,7 +75,7 @@
 - **Слушает события** от VASTTracker вместо переопределения методов
 - Автоматически вызывает соответствующие методы логгера при получении событий трекинга
 - Логирует duration при первом определении длительности через `setProgress()`
-- Добавляет контекстную информацию (adId, creativeId) к каждому событию
+- Использует единообразную структуру событий с тремя обязательными полями
 - **Естественная защита**: VASTTracker сам управляет частотой событий
 - Не нарушает внутреннюю логику VAST клиента
 
@@ -74,18 +102,24 @@
 10. **resume** - при вызове `track('resume')`
 11. **fullscreen** - при вызове `track('fullscreen')`
 12. **duration** - при первом определении длительности через `setProgress()`
-13. **ads-count** - при определении количества рекламы в блоке
-14. **error** - при вызове `error()`
+13. **progress** - при изменении прогресса просмотра через `setProgress()`
+14. **ads-count** - при определении количества рекламы в блоке
+15. **error** - при вызове `error()`
 
 ## Дополнительная информация в событиях
 
-К каждому событию автоматически добавляется:
-- `adId` - ID рекламы
-- `creativeId` - ID креатива
-- `eventName` - название события (для событий трекинга)
-- `errorCode` - код ошибки (для error событий)
-- `duration` - длительность в секундах (для duration событий)
-- `adsCount` - количество рекламы в блоке (для ads-count событий)
+**Поля событий:**
+- `videojs-vast-plugin-event` - название события (обязательно)
+- `event-time` - время события в миллисекундах (обязательно)
+- `message` - важные данные или null (обязательно)
+
+**Содержимое message:**
+- `duration` - длительность в секундах (строка)
+- `progress` - процент прогресса просмотра 0-100 (строка)
+- `ads-count` - количество рекламы (строка)
+- `vast-loaded/vast-parsed/vast-ready` - URL VAST файла
+- `error` - код ошибки (строка)
+- Остальные события - `null`
 
 ## Обратная совместимость
 
@@ -98,13 +132,16 @@
 import {Logger} from './logger.mjs';
 
 // Логирование события трекинга
-Logger.logStart({customData: 'value'});
+Logger.logStart();
 
 // Логирование duration
-Logger.logDuration(30, {adId: '123'});
+Logger.logDuration(30);
 
 // Логирование количества рекламы
-Logger.logAdsCount(3, {scheduleType: 'preroll'});
+Logger.logAdsCount(3);
+
+// Логирование прогресса
+Logger.logProgress(75);
 ```
 
 ### Автоматическое логирование
