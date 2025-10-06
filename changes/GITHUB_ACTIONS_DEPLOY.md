@@ -42,10 +42,10 @@
 - Создается временная папка `deploy` с только нужными файлами
 - Копируются только `dist/videojsx.vast.js` и `dist/videojsx.vast.css`
 - Файлы попадают в корень Cloudflare Pages
-- Используется официальный action `cloudflare/pages-action@v1`
+- Используется современный action `cloudflare/wrangler-action@v3`
 
 ## Триггеры
-- Запускается при push в ветку `main`
+- Запускается при push в ветку `master`
 - Запускается в любом случае (без условий)
 
 ## Результат
