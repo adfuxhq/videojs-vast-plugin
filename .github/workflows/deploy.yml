@@ -43,4 +43,4 @@ jobs:
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        command: pages deploy deploy --project-name=videojs-vast-plugin --commit-dirty=true --no-bundle
+        command: pages publish deploy --project-name=videojs-vast-plugin --commit-dirty=true --no-bundle
