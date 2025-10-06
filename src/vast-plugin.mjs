@@ -464,6 +464,8 @@ export class VastPlugin extends Plugin {
     const startAdBreak = () => {
       adTotal = ads.length;
       console.log(`Playing ${adTotal} ads`);
+      // Логируем количество рекламы
+      Logger.logAdsCount(adTotal);
       player.ads.startLinearAdMode();
       setUpEvents();
       playNextAd();

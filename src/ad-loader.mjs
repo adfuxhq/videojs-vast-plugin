@@ -3,6 +3,7 @@ import {companionFn, linearFn} from "./utils.mjs";
 import {VASTClient, VASTParser, VASTTracker} from '@dailymotion/vast-client';
 import {TrackedAd} from "./tracked-ad.mjs";
 import {Logger} from './logger.mjs';
+import {LoggedVASTTracker} from './logged-vast-tracker.mjs';
 
 export class AdLoader {
   #vastClient
@@ -111,7 +112,7 @@ export class AdLoader {
   #createTrackedAds = ads => {
     const createTrackedAd = ad => {
       const linearAdTracker =
-        new VASTTracker(this.#vastClient, ad, ad.creatives.find(linearFn), ad.creatives.find(companionFn));
+        new LoggedVASTTracker(this.#vastClient, ad, ad.creatives.find(linearFn), ad.creatives.find(companionFn));
 
       linearAdTracker.on('clickthrough', onClickThrough);
 
@@ -128,7 +129,7 @@ export class AdLoader {
           .find(v => parseInt(v.width, 10) <= options.companion.maxWidth && parseInt(v.height, 10) <= options.companion.maxHeight);
 
         if (variation) {
-          companionAdTracker = new VASTTracker(this.#vastClient, ad, companionCreative, variation);
+          companionAdTracker = new LoggedVASTTracker(this.#vastClient, ad, companionCreative, variation);
           companionAdTracker.on('clickthrough', onClickThrough);
         }
       }
