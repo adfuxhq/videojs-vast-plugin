@@ -25,7 +25,7 @@ module.exports = common.map(c => merge(c, {
                         comments: false,
                     },
                     compress: {
-                        drop_console: true,
+                        // drop_console: true, // Отключено для Playwright тестирования
                     },
                 },
                 extractComments: false,
