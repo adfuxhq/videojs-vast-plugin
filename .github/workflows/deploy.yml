@@ -29,11 +29,18 @@ jobs:
         mkdir -p deploy
         cp dist/videojsx.vast.js deploy/
         cp dist/videojsx.vast.css deploy/
+        echo "Files in deploy directory:"
         ls -la deploy/
+        echo "File sizes:"
+        du -h deploy/*
+        echo "File contents check:"
+        head -c 100 deploy/videojsx.vast.js
+        echo ""
+        head -c 100 deploy/videojsx.vast.css
       
     - name: Deploy to Cloudflare Pages
       uses: cloudflare/wrangler-action@v3
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        command: pages deploy deploy --project-name=videojs-vast-plugin --commit-dirty=true --branch=production
+        command: pages deploy deploy --project-name=videojs-vast-plugin --commit-dirty=true --compatibility-date=2024-01-01 --force --no-bundle
