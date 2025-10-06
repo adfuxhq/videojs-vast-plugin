@@ -3,7 +3,7 @@
  * Выводит события в консоль браузера в формате JSON
  */
 
-const EVENT_KEY = 'videojs-vast-plugin-event';
+const EVENT_KEY = 'player-event';
 
 export class Logger {
   /**
