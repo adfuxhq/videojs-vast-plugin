@@ -29,10 +29,11 @@ jobs:
         mkdir -p deploy
         cp dist/videojsx.vast.js deploy/
         cp dist/videojsx.vast.css deploy/
+        ls -la deploy/
       
     - name: Deploy to Cloudflare Pages
       uses: cloudflare/wrangler-action@v3
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        command: pages deploy deploy --project-name=videojs-vast-plugin
+        command: pages publish deploy --project-name=videojs-vast-plugin
