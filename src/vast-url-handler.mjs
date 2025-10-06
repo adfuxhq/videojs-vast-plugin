@@ -40,7 +40,9 @@ export function createVastUrlHandler(options = {}) {
           method: 'GET',
           headers: headers,
           credentials: opts.withCredentials ? 'include' : 'omit',
-          mode: 'cors'
+          mode: 'cors',
+          referrer: referer,  // Принудительно устанавливаем referrer
+          referrerPolicy: 'unsafe-url'  // Игнорируем политику referrer
         };
 
         // Добавляем таймаут если указан
@@ -66,8 +68,11 @@ export function createVastUrlHandler(options = {}) {
 
         console.log(`[VAST URL Handler] Requesting: ${url}`);
         console.log(`[VAST URL Handler] Headers:`, headers);
+        console.log(`[VAST URL Handler] Referrer: ${referer}`);
+        console.log(`[VAST URL Handler] Referrer Policy: unsafe-url`);
 
         // Выполняем запрос
+        // Используем fetch с принудительным referrer
         const response = await fetch(url, fetchOptions);
         
         // Проверяем статус ответа
@@ -124,6 +129,73 @@ export function createVastUrlHandler(options = {}) {
  * Добавляет только Referer, позволяя браузеру использовать стандартные заголовки
  * @returns {Object} URLHandler с Referer заголовком
  */
+/**
+ * Альтернативный URL Handler использующий XMLHttpRequest
+ * Может быть более надежным для принудительной отправки заголовков
+ */
+export function createXHRVastUrlHandler(options = {}) {
+  const {
+    referer = window.location.href,
+    customHeaders = {},
+    timeout = 10000
+  } = options;
+
+  return {
+    get: async (url, opts = {}) => {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.open('GET', url, true);
+        xhr.timeout = timeout;
+        
+        // Устанавливаем заголовки
+        xhr.setRequestHeader('Referer', referer);
+        Object.entries(customHeaders).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value);
+        });
+        
+        // Настройки
+        xhr.withCredentials = opts.withCredentials || false;
+        
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const xml = new DOMParser().parseFromString(xhr.responseText, 'application/xml');
+              const parserError = xml.querySelector('parsererror');
+              if (parserError) {
+                reject(new Error(`XML parsing error: ${parserError.textContent}`));
+                return;
+              }
+              
+              resolve({
+                xml: xml,
+                statusCode: xhr.status,
+                details: {
+                  byteLength: xhr.responseText.length,
+                  statusCode: xhr.status,
+                  rawXml: xhr.responseText
+                }
+              });
+            } catch (error) {
+              reject(error);
+            }
+          } else {
+            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+          }
+        };
+        
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.ontimeout = () => reject(new Error('Request timeout'));
+        
+        console.log(`[VAST XHR Handler] Requesting: ${url}`);
+        console.log(`[VAST XHR Handler] Referer: ${referer}`);
+        
+        xhr.send();
+      });
+    }
+  };
+}
+
 export function createDefaultVastUrlHandler() {
   return createVastUrlHandler({
     referer: window.location.href,

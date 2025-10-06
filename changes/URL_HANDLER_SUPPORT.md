@@ -18,17 +18,24 @@
 
 ### 1. Создан кастомный URL Handler (`src/vast-url-handler.mjs`)
 
-Реализован `createDefaultVastUrlHandler()` который:
+Реализованы два URL Handler'а:
+
+**`createXHRVastUrlHandler()` (используется по умолчанию):**
+- **Использует XMLHttpRequest**: более надежный для принудительной отправки заголовков
+- **Принудительно отправляет Referer**: игнорирует политику `Referrer Policy: no-referrer`
+- **Полный контроль над заголовками**: устанавливает заголовки напрямую через `setRequestHeader`
+
+**`createDefaultVastUrlHandler()` (альтернативный):**
+- **Использует fetch API**: с принудительным `referrer` и `referrerPolicy: 'unsafe-url'`
 - **Автоматически добавляет Referer**: URL текущей страницы
 - **Позволяет браузеру использовать стандартные заголовки**: User-Agent, Accept, Accept-Language и другие заголовки устанавливаются браузером автоматически
-- **Использует минимальный набор заголовков**: только необходимые для корректной работы VAST запросов
 
 ### 2. Установлен по умолчанию в плагине
 
 ```javascript
 const DEFAULT_OPTIONS = Object.freeze({
   // ... существующие опции
-  urlHandler: createDefaultVastUrlHandler(),  // Автоматический URL Handler
+  urlHandler: createXHRVastUrlHandler(),  // XMLHttpRequest URL Handler с принудительным Referer
   // ... остальные опции
 });
 ```
@@ -56,26 +63,42 @@ player.vast({
 });
 ```
 
-### Кастомизация URL Handler
+### Выбор URL Handler
 
-Если нужно изменить поведение URL Handler:
-
+**Использование XMLHttpRequest (по умолчанию, рекомендуется):**
 ```javascript
-import { createVastUrlHandler } from './src/vast-url-handler.mjs';
+import { createXHRVastUrlHandler } from './src/vast-url-handler.mjs';
 
-// Создаем кастомный URL Handler с дополнительными заголовками
-const customUrlHandler = createVastUrlHandler({
+// Принудительно отправляет Referer даже при Referrer Policy: no-referrer
+const xhrHandler = createXHRVastUrlHandler({
   referer: 'https://custom-referer.com',
   customHeaders: {
-    'X-Custom-Header': 'value',
-    'Authorization': 'Bearer token'
+    'X-Custom-Header': 'value'
   },
   timeout: 15000
 });
 
 player.vast({
   url: 'http://example.com/vast.xml',
-  urlHandler: customUrlHandler
+  urlHandler: xhrHandler
+});
+```
+
+**Использование fetch API (альтернативный):**
+```javascript
+import { createDefaultVastUrlHandler } from './src/vast-url-handler.mjs';
+
+// Использует fetch с referrerPolicy: 'unsafe-url'
+const fetchHandler = createDefaultVastUrlHandler({
+  referer: 'https://custom-referer.com',
+  customHeaders: {
+    'Authorization': 'Bearer token'
+  }
+});
+
+player.vast({
+  url: 'http://example.com/vast.xml',
+  urlHandler: fetchHandler
 });
 ```
 
@@ -159,8 +182,17 @@ interface URLHandlerResponseDetails {
 - Существующий код продолжает работать без изменений
 - Можно отключить кастомный Handler установив `urlHandler: null`
 
+## Решение проблемы Referrer Policy
+
+Проблема была в том, что браузер устанавливает политику `Referrer Policy: no-referrer`, которая блокирует отправку заголовка `Referer`. Решение:
+
+1. **XMLHttpRequest подход**: Использует `setRequestHeader()` для принудительной установки заголовка `Referer`
+2. **Fetch API подход**: Использует `referrerPolicy: 'unsafe-url'` для игнорирования политики referrer
+
+XMLHttpRequest более надежен для обхода ограничений политики referrer.
+
 ## Файлы изменений
 
-- `src/vast-url-handler.mjs` - новый файл с кастомным URL Handler
-- `src/vast-plugin.mjs` - импорт и использование `createDefaultVastUrlHandler()`
+- `src/vast-url-handler.mjs` - новый файл с двумя URL Handler'ами
+- `src/vast-plugin.mjs` - импорт и использование `createXHRVastUrlHandler()` по умолчанию
 - `src/ad-loader.mjs` - передача `urlHandler` в VASTClient.get()
