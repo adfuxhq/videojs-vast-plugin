@@ -18,7 +18,6 @@ const DEFAULT_OPTIONS = Object.freeze({
   controlsEnabled: false,
   wrapperLimit: 10,
   withCredentials: true,
-  urlHandler: createXHRVastUrlHandler(),
   skip: 0,
   displayRemainingTime: false,
   displayRemainingTimeIcons: false,
