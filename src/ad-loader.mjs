@@ -78,6 +78,8 @@ export class AdLoader {
       this.#vastParser
         .parseVAST(xmlDocument)
         .then(ads => {
+          // Логируем событие успешной загрузки VAST (для inline XML)
+          Logger.logVastLoaded('inline-xml');
           // Логируем событие парсинга VAST
           Logger.logVastParsed('inline-xml');
           return this.#adSelector.selectAds(ads);
@@ -98,6 +100,8 @@ export class AdLoader {
           urlHandler: this.#options.urlHandler,
         })
         .then(ads => {
+          // Логируем событие успешной загрузки VAST
+          Logger.logVastLoaded(url);
           // Логируем событие парсинга VAST
           Logger.logVastParsed(url);
           return this.#adSelector.selectAds(ads);

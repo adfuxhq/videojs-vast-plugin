@@ -65,9 +65,6 @@ export class VastPlugin extends Plugin {
     const mergeOptionsFunction = parseInt(videojs.VERSION, 10) >= 8 ? videojs.obj.merge : videojs.mergeOptions;
     options = mergeOptionsFunction(DEFAULT_OPTIONS, options || {});
 
-    // Логируем событие загрузки VAST плагина
-    const vastUrl = options.url || 'inline-xml';
-    Logger.logVastLoaded(vastUrl);
 
     /** @type {VASTClient} */
     const vastClient = new VASTClient();
